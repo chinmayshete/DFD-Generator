@@ -966,3 +966,93 @@ body {
     fill: var(--text-primary) !important;
 }
 
+/* ==========================================================================
+   Refinement Group — Natural Language Diagram Editing
+   ========================================================================== */
+.refinement-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.refinement-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 6px 0;
+}
+
+.refinement-header {
+    margin-bottom: 0 !important;
+}
+
+.refinement-header h2 {
+    font-size: 11px !important;
+}
+
+.section-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.refinement-textarea-wrapper textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+/* Apply Refinement button */
+.btn-refine-action {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--border-radius-md);
+    border: 1.5px solid var(--accent-primary);
+    background: transparent;
+    color: var(--accent-primary);
+    cursor: pointer;
+    transition: all var(--transition-speed) var(--transition-curve);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-refine-action::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-primary);
+    opacity: 0;
+    transition: opacity var(--transition-speed) var(--transition-curve);
+}
+
+.btn-refine-action:hover:not(:disabled)::before { opacity: 0.1; }
+
+.btn-refine-action:hover:not(:disabled) {
+    box-shadow: 0 0 14px var(--accent-glow);
+    transform: translateY(-1px);
+}
+
+.btn-refine-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+.btn-refine-action svg,
+.btn-refine-action .btn-text,
+.btn-refine-action .loader {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}

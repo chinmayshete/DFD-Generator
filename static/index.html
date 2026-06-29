@@ -98,13 +98,17 @@
                             </select>
                         </div>
                     </div>
-                    
-                    <div class="refinement-group" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                        <label for="refinement-input" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Refine Diagram (Iterative Edits)</label>
-                        <div class="textarea-wrapper" style="min-height: 80px; margin-bottom: 10px;">
-                            <textarea id="refinement-input" placeholder="e.g. Add a process node to notify the manager after validation..." style="min-height: 80px; resize: vertical;" disabled></textarea>
+                    <div class="refinement-group">
+                        <div class="refinement-divider"></div>
+                        <div class="section-header refinement-header">
+                            <h2>Refine Diagram</h2>
+                            <span class="section-badge">Iterative</span>
                         </div>
-                        <button class="btn btn-outline" id="btn-refine" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;" disabled>
+                        <div class="textarea-wrapper refinement-textarea-wrapper">
+                            <textarea id="refinement-input" placeholder="e.g. Add a notification step after validation, rename the decision node, remove the staging step..." disabled></textarea>
+                        </div>
+                        <button class="btn btn-refine-action" id="btn-refine" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             <span class="btn-text">Apply Refinement</span>
                             <span class="loader hidden"></span>
                         </button>
