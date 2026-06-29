@@ -1093,10 +1093,23 @@ body {
 /* ==========================================================================
    Undo / Redo History Controls
    ========================================================================== */
+
+/* Single row: [Apply Refinement ──────] [Undo | Redo] */
+.refine-action-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.refine-action-row #btn-refine {
+    flex: 1;
+    min-width: 0;
+}
+
 .history-controls {
     display: flex;
     align-items: stretch;
-    gap: 0;
+    flex-shrink: 0;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     overflow: hidden;
@@ -1110,15 +1123,14 @@ body {
 }
 
 .btn-history {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 9px 12px;
+    gap: 5px;
+    padding: 0 12px;
     font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    white-space: nowrap;
     background: transparent;
     border: none;
     color: var(--text-secondary);
@@ -1128,12 +1140,12 @@ body {
 }
 
 .btn-history:hover:not(:disabled) {
-    background: rgba(var(--accent-primary-rgb, 59, 130, 246), 0.1);
+    background: rgba(59, 130, 246, 0.1);
     color: var(--accent-primary);
 }
 
 .btn-history:active:not(:disabled) {
-    background: rgba(var(--accent-primary-rgb, 59, 130, 246), 0.18);
+    background: rgba(59, 130, 246, 0.18);
 }
 
 .btn-history:disabled {
