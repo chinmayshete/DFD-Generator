@@ -1,37 +1,37 @@
 // Predefined templates mapping
 const TEMPLATES = {
     sample: `1. Start
-2. Input: FileUploader detects a new file
-3. Data: CCRTracking.dbo.SourceFile table is updated with metadata info of the new file - cylindrical shape
-4. Process: CCRTracking.dbo.up_SubmitLoadControl is triggered to dynamically generate the loadIDs and perform Sanity checks on the file info.
-5. Process: Dynamic variables like memberNumber, PortfolioNumber, member_portid etc are identified.
-6. Process: ParamDetails column dynamic values are resolved and stored in dbo.Process table.
-7. Process: JCS jobs are triggered that starts the load steps in sequence
-8. Decision: If data needs any transformations:
-    Yes: Data is first loaded into CCRStaging intermediate DB
-    No: data is moved directly to final CCRAccount_[placeholder] DB
+2. Input: User uploads file via Web Portal
+3. Data: Store metadata info in dbo.UploadLogs table - cylindrical shape
+4. Process: Run system validation checks and generate unique IngestionID
+5. Process: Extract dynamic attributes like tenantID and departmentCode
+6. Process: Resolve runtime configuration parameters and save to dbo.Parameters table
+7. Process: Start background job worker queue for sequential ingestion steps
+8. Decision: Is data transformation required?
+    Yes: Save to intermediate staging database
+    No: Write directly to target data warehouse
 9. End`,
 
     auth: `1. Start
-2. Input: User enters username and password in Login Form
-3. Data: Security.dbo.Users table is checked to verify user credentials - cylindrical shape
-4. Process: AuthenticationService verifies salt and hashes password to check for a match
+2. Input: Client sends credentials in authentication request
+3. Data: Verify credentials against AppUsers table - cylindrical shape
+4. Process: Verify key signatures and password hashing
 5. Decision: Are credentials valid?
-    Yes: SessionToken is generated and stored in Security.dbo.UserSessions table
-    No: Generate login failure alert and display error message
-6. Process: Audit logging service records user login attempt in SystemLogs.dbo.AuditTrail table
+    Yes: Generate access token and log session in ActiveSessions table
+    No: Raise authentication failure alert
+6. Process: Record security audit logs in AuditTrail table
 7. End`,
 
     checkout: `1. Start
-2. Input: Customer clicks "Place Order" button in Shopping Cart
-3. Data: Catalog.dbo.Inventory table is read to check stock availability - cylindrical shape
-4. Decision: Are all items in stock?
-    Yes: Reserve stock quantities in inventory table and proceed to payment
-    No: Show "Out of stock" notice to customer and end flow
-5. Process: PaymentGateway process request via external Stripe API
-6. Decision: Was payment successful?
-    Yes: Create order records in Orders.dbo.SalesOrder table and notify Warehouse
-    No: Release reserved stock and show payment failure alert to customer
+2. Input: Customer submits order details at checkout
+3. Data: Check stock availability in ProductCatalog table - cylindrical shape
+4. Decision: Are items in stock?
+    Yes: Reserve requested stock quantity and proceed
+    No: Display out-of-stock notice to user
+5. Process: Authorize transaction via Payment Processor API
+6. Decision: Is payment successful?
+    Yes: Insert order records into Orders table and notify dispatch
+    No: Release reserved stock and show payment error
 7. End`
 };
 

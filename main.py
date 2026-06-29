@@ -53,8 +53,8 @@ async def generate_dfd(data: GenerateRequest):
         "You must respond with a JSON object ONLY. Do not include any conversational preamble or postscript.\n\n"
         "The JSON object must have this exact schema:\n"
         "{\n"
-        '  "title": "A short, professional title for the diagram",\n'
-        '  "description": "A high-level summary explaining the data flow",\n'
+        '  "title": "A short, generic, and professional title for the diagram (do not include specific proprietary system names like CCR, etc.)",\n'
+        '  "description": "An extremely short, generic, and concise explanation of the data flow (maximum 1 sentence)",\n'
         '  "mermaid": "Valid Mermaid.js flowchart source code. Use flowchart TD or LR. Follow these formatting and shape rules strictly:\\n'
         '    - ALWAYS wrap ALL node labels in double quotes (\\\") inside their shapes to prevent parsing errors.\\n'
         '    - Split long labels (more than 4 words) into multiple lines using HTML breaks <br/> to keep shapes compact and highly readable (e.g. \\\"CCRTracking.dbo.up_SubmitLoadControl<br/>Generate loadIDs & Sanity checks\\\").\\n'
