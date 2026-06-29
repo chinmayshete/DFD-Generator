@@ -523,6 +523,25 @@ body {
     background: var(--bg-card);
 }
 
+/* When code editor is nested inside config section, flatten its appearance */
+.code-editor-inline {
+    background: transparent;
+    border-color: var(--border-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.code-editor-inline .accordion-header {
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 10px 14px;
+}
+
+.code-editor-inline .accordion-header:hover {
+    background: rgba(255,255,255,0.03);
+}
+
 .accordion-header {
     display: flex;
     justify-content: space-between;

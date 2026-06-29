@@ -117,22 +117,24 @@
                             <span class="btn-text">Apply Refinement</span>
                             <span class="loader hidden"></span>
                         </button>
+
+                        <!-- Live Mermaid Code Editor (inline) -->
+                        <div class="refinement-divider"></div>
+                        <div class="panel-section collapsible-section code-editor-inline" id="code-editor-section">
+                            <button class="accordion-header" id="accordion-trigger">
+                                <span>Live Mermaid Code Editor</span>
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="accordion-content hidden" id="accordion-content">
+                                <textarea id="mermaid-code" spellcheck="false" placeholder="Mermaid code will appear here..."></textarea>
+                                <span class="editor-tip">Editing this code will immediately re-render the diagram in the canvas.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Live Mermaid Code Panel -->
-                <div class="panel-section collapsible-section" id="code-editor-section">
-                    <button class="accordion-header" id="accordion-trigger">
-                        <span>Live Mermaid Code Editor</span>
-                        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-                    <div class="accordion-content hidden" id="accordion-content">
-                        <textarea id="mermaid-code" spellcheck="false" placeholder="Mermaid code will appear here..."></textarea>
-                        <span class="editor-tip">Editing this code will immediately re-render the diagram in the canvas.</span>
-                    </div>
-                </div>
             </section>
 
             <!-- Vertical Resizer -->
