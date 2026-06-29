@@ -472,16 +472,27 @@ body {
     font-size: 14px;
     font-weight: 700;
     box-shadow: 0 4px 14px var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 6px 20px var(--accent-glow);
     filter: brightness(1.1);
 }
 
-.btn-primary:active {
+.btn-primary:active:not(:disabled) {
     transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+    box-shadow: none;
 }
 
 /* Loader Animation */
