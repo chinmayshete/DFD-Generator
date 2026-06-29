@@ -74,7 +74,11 @@ const elements = {
     apiIndicator: document.querySelector('.status-indicator'),
     apiLabel: document.querySelector('.status-label'),
     toastContainer: document.getElementById('toast-container'),
-    templateButtons: document.querySelectorAll('.template-selector .btn')
+    templateButtons: document.querySelectorAll('.template-selector .btn'),
+    refinementInput: document.getElementById('refinement-input'),
+    btnRefine: document.getElementById('btn-refine'),
+    refineBtnText: document.querySelector('#btn-refine .btn-text'),
+    refineLoader: document.querySelector('#btn-refine .loader')
 };
 
 // Debounce helper
@@ -191,6 +195,8 @@ async function generateDFD() {
     elements.btnGenerate.disabled = true;
     elements.btnText.textContent = "Analyzing & Drawing...";
     elements.loader.classList.remove('hidden');
+    elements.refinementInput.disabled = true;
+    elements.btnRefine.disabled = true;
     
     try {
         const response = await fetch('/api/generate', {
@@ -232,6 +238,10 @@ async function generateDFD() {
         // Populate dictionary
         appState.components = result.components || [];
         populateDictionary(result.components);
+        
+        // Enable refinement inputs on success
+        elements.refinementInput.disabled = false;
+        elements.btnRefine.disabled = false;
         
         showToast("Diagram generated successfully!", "success");
         
@@ -517,9 +527,92 @@ function exportPng() {
 }
 
 // Setup Event Listeners
+// Refine DFD using natural language instruction
+async function refineDFD() {
+    const text = elements.requirementsInput.value.trim();
+    const currentMermaid = appState.currentMermaidCode.trim();
+    const instruction = elements.refinementInput.value.trim();
+    
+    if (!instruction) {
+        showToast("Please enter a refinement instruction first.", "error");
+        return;
+    }
+    
+    // Set loading state
+    elements.btnRefine.disabled = true;
+    elements.refineBtnText.textContent = "Refining...";
+    elements.refineLoader.classList.remove('hidden');
+    elements.btnGenerate.disabled = true;
+    elements.refinementInput.disabled = true;
+    
+    try {
+        const response = await fetch('/api/refine', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requirements: text,
+                current_mermaid: currentMermaid,
+                instruction: instruction
+            })
+        });
+        
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || "Server error occurred during refinement");
+        }
+        
+        const result = await response.json();
+        
+        // Update Title & Meta
+        elements.diagramTitle.textContent = result.title || "Refined Data Flow Diagram";
+        elements.diagramMetaDesc.textContent = result.description || "Updated workflow diagram";
+        
+        // Get layout orientation from select dropdown
+        let finalCode = result.mermaid;
+        const selectedDir = elements.flowDirection.value;
+        // Override direction if different
+        if (finalCode.includes("flowchart TD") && selectedDir === "LR") {
+            finalCode = finalCode.replace("flowchart TD", "flowchart LR");
+        } else if (finalCode.includes("flowchart LR") && selectedDir === "TD") {
+            finalCode = finalCode.replace("flowchart LR", "flowchart TD");
+        }
+        
+        // Update Live Editor Code
+        appState.currentMermaidCode = finalCode;
+        elements.mermaidCode.value = finalCode;
+        
+        // Render
+        await renderDiagram(finalCode);
+        
+        // Populate dictionary
+        appState.components = result.components || [];
+        populateDictionary(result.components);
+        
+        // Clear refinement textbox on success
+        elements.refinementInput.value = "";
+        
+        showToast("Diagram refined successfully!", "success");
+        
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, "error");
+    } finally {
+        elements.btnRefine.disabled = false;
+        elements.refineBtnText.textContent = "Apply Refinement";
+        elements.refineLoader.classList.add('hidden');
+        elements.btnGenerate.disabled = false;
+        elements.refinementInput.disabled = false;
+    }
+}
+
 function setupEvents() {
     // Generate Button Click
     elements.btnGenerate.addEventListener('click', generateDFD);
+    
+    // Refine Button Click
+    elements.btnRefine.addEventListener('click', refineDFD);
     
     // Theme Toggle
     elements.themeToggle.addEventListener('click', () => {

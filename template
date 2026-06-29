@@ -1,0 +1,21 @@
+1. Start
+
+2. Input: FileUploader detects a new file
+
+3. Data: CCRTracking.dbo.SourceFile table is updated with metadata info of the new file - cylindrical shape
+
+4. Process: CCRTracking.dbo.up_SubmitLoadControl is triggered to dynamically generate the loadIDs and perform Sanity checks on the file info.
+
+5. Process: Dynamic variables like memberNumber, PortfolioNumber, member_portid etc are identified.
+
+6. Process: ParamDetails column dynamic values are resolved and stored in dbo.Process table.
+
+7. Process: JCS jobs are triggered that starts the load steps in sequence
+
+8. Decision: If data needs any transformations:
+
+    Yes: Data is first loaded into CCRStaging intermediate DB
+
+    No: data is moved directly to final CCRAccount_[placeholder] DB
+
+9. End

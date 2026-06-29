@@ -98,6 +98,17 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <div class="refinement-group" style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                        <label for="refinement-input" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Refine Diagram (Iterative Edits)</label>
+                        <div class="textarea-wrapper" style="min-height: 80px; margin-bottom: 10px;">
+                            <textarea id="refinement-input" placeholder="e.g. Add a process node to notify the manager after validation..." style="min-height: 80px; resize: vertical;" disabled></textarea>
+                        </div>
+                        <button class="btn btn-outline" id="btn-refine" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;" disabled>
+                            <span class="btn-text">Apply Refinement</span>
+                            <span class="loader hidden"></span>
+                        </button>
+                    </div>
                 </div>
 
                 <button class="btn btn-primary btn-generate" id="btn-generate">
