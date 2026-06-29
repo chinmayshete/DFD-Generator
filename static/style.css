@@ -404,7 +404,8 @@ body {
     display: flex;
 }
 
-#requirements-input {
+#requirements-input,
+#refinement-input {
     width: 100%;
     height: 100%;
     resize: none;
@@ -420,7 +421,8 @@ body {
     transition: border-color var(--transition-speed);
 }
 
-#requirements-input:focus {
+#requirements-input:focus,
+#refinement-input:focus {
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px var(--accent-glow);
 }
@@ -1003,6 +1005,7 @@ body {
 
 .refinement-textarea-wrapper textarea {
     min-height: 90px;
+    height: 90px;
     resize: vertical;
 }
 
