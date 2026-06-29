@@ -118,6 +118,19 @@
                             <span class="loader hidden"></span>
                         </button>
 
+                        <!-- Undo / Redo History Controls -->
+                        <div class="history-controls">
+                            <button class="btn btn-history" id="btn-undo" disabled title="Undo last refinement">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M3 7v6h6"/><path d="M3 13C5.5 6.5 14 4 21 7"/></svg>
+                                <span>Undo</span>
+                            </button>
+                            <div class="history-divider"></div>
+                            <button class="btn btn-history" id="btn-redo" disabled title="Redo last undone refinement">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 7v6h-6"/><path d="M21 13C18.5 6.5 10 4 3 7"/></svg>
+                                <span>Redo</span>
+                            </button>
+                        </div>
+
                         <!-- Live Mermaid Code Editor (inline) -->
                         <div class="refinement-divider"></div>
                         <div class="panel-section collapsible-section code-editor-inline" id="code-editor-section">

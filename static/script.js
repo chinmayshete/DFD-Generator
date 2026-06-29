@@ -44,7 +44,9 @@ let appState = {
     startX: 0,
     startY: 0,
     currentMermaidCode: "",
-    components: []
+    components: [],
+    undoStack: [],   // each entry: { mermaid, title, description, components }
+    redoStack: []
 };
 
 // DOM Elements
@@ -78,7 +80,9 @@ const elements = {
     refinementInput: document.getElementById('refinement-input'),
     btnRefine: document.getElementById('btn-refine'),
     refineBtnText: document.querySelector('#btn-refine .btn-text'),
-    refineLoader: document.querySelector('#btn-refine .loader')
+    refineLoader: document.querySelector('#btn-refine .loader'),
+    btnUndo: document.getElementById('btn-undo'),
+    btnRedo: document.getElementById('btn-redo')
 };
 
 // Debounce helper
@@ -183,6 +187,70 @@ async function renderDiagram(code) {
     }
 }
 
+// ─── Undo / Redo History Helpers ────────────────────────────────────────────
+
+/** Save current diagram state onto the undo stack and clear redo stack. */
+function saveSnapshot() {
+    appState.undoStack.push({
+        mermaid: appState.currentMermaidCode,
+        title: elements.diagramTitle.textContent,
+        description: elements.diagramMetaDesc.textContent,
+        components: [...appState.components]
+    });
+    appState.redoStack = [];
+    updateUndoRedoButtons();
+}
+
+/** Restore a snapshot object to the canvas without touching the stacks. */
+async function applySnapshot(snapshot) {
+    appState.currentMermaidCode = snapshot.mermaid;
+    elements.mermaidCode.value = snapshot.mermaid;
+    elements.diagramTitle.textContent = snapshot.title;
+    elements.diagramMetaDesc.textContent = snapshot.description;
+    appState.components = [...snapshot.components];
+    populateDictionary(snapshot.components);
+    await renderDiagram(snapshot.mermaid);
+    updateUndoRedoButtons();
+}
+
+/** Sync the disabled state of the undo / redo buttons. */
+function updateUndoRedoButtons() {
+    elements.btnUndo.disabled = appState.undoStack.length === 0;
+    elements.btnRedo.disabled = appState.redoStack.length === 0;
+}
+
+/** Step backward in history. */
+async function undoDFD() {
+    if (appState.undoStack.length === 0) return;
+    // Save current state to redo stack
+    appState.redoStack.push({
+        mermaid: appState.currentMermaidCode,
+        title: elements.diagramTitle.textContent,
+        description: elements.diagramMetaDesc.textContent,
+        components: [...appState.components]
+    });
+    const snapshot = appState.undoStack.pop();
+    await applySnapshot(snapshot);
+    showToast("Undo applied", "info", 2000);
+}
+
+/** Step forward in history. */
+async function redoDFD() {
+    if (appState.redoStack.length === 0) return;
+    // Save current state to undo stack
+    appState.undoStack.push({
+        mermaid: appState.currentMermaidCode,
+        title: elements.diagramTitle.textContent,
+        description: elements.diagramMetaDesc.textContent,
+        components: [...appState.components]
+    });
+    const snapshot = appState.redoStack.pop();
+    await applySnapshot(snapshot);
+    showToast("Redo applied", "info", 2000);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Generate DFD from Requirements via backend API
 async function generateDFD() {
     const text = elements.requirementsInput.value.trim();
@@ -190,6 +258,11 @@ async function generateDFD() {
         showToast("Please enter some requirements first.", "error");
         return;
     }
+    
+    // New generation resets history
+    appState.undoStack = [];
+    appState.redoStack = [];
+    updateUndoRedoButtons();
     
     // Set loading state
     elements.btnGenerate.disabled = true;
@@ -538,6 +611,9 @@ async function refineDFD() {
         return;
     }
     
+    // Snapshot current state before mutating (enables undo)
+    saveSnapshot();
+    
     // Set loading state
     elements.btnRefine.disabled = true;
     elements.refineBtnText.textContent = "Refining...";
@@ -613,6 +689,10 @@ function setupEvents() {
     
     // Refine Button Click
     elements.btnRefine.addEventListener('click', refineDFD);
+    
+    // Undo / Redo
+    elements.btnUndo.addEventListener('click', undoDFD);
+    elements.btnRedo.addEventListener('click', redoDFD);
     
     // Theme Toggle
     elements.themeToggle.addEventListener('click', () => {
