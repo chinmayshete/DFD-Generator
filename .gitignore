@@ -15,3 +15,6 @@ venv/
 .gemini/
 .vscode/
 .idea/
+
+# Local scratch files
+template
