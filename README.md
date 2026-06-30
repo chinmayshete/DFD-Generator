@@ -1,4 +1,4 @@
-# StrataFlow DFD Generator
+# SleekFlow DFD Generator
 
 Convert textual system requirements and workflows into interactive, high-level Data Flow Diagrams (DFDs) using Python, FastAPI, and Azure OpenAI.
 
