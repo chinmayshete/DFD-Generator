@@ -31,6 +31,12 @@ async def read_index():
     # Serve index.html from static folder at root path
     return FileResponse("static/index.html")
 
+@app.get("/.well-known/appspecific/com.chrome.devtools.json")
+async def chrome_devtools_json():
+    # Chrome DevTools automatically probes this URL when DevTools is open.
+    # Returning an empty object suppresses the 404 log noise.
+    return {}
+
 @app.get("/api/status")
 async def get_status():
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
