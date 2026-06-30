@@ -164,17 +164,19 @@ async function renderDiagram(code) {
             nodes: document.querySelectorAll('#mermaid-svg-target')
         });
         
-        // Post-render styling adjustments to make diagrams look premium
+        // Let the SVG size itself naturally — our transform system handles display sizing
         const svg = elements.mermaidRenderContainer.querySelector('svg');
         if (svg) {
-            svg.style.width = '100%';
-            svg.style.height = 'auto';
-            svg.style.maxHeight = '80vh';
-            // Enable interactive dragging cursor
-            svg.style.cursor = 'grab';
+            svg.removeAttribute('style');   // clear any mermaid-injected inline styles
+            svg.style.display = 'block';
         }
         
-        resetZoomAndPan();
+        // Fit new diagram to viewport (waits one frame for layout to settle)
+        requestAnimationFrame(() => {
+            if (typeof window._fitDiagramToView === 'function') {
+                window._fitDiagramToView(true);
+            }
+        });
     } catch (error) {
         console.error("Mermaid Render Error:", error);
         elements.mermaidRenderContainer.innerHTML = `
@@ -325,6 +327,8 @@ async function generateDFD() {
         elements.btnGenerate.disabled = false;
         elements.btnText.textContent = "Generate Diagram";
         elements.loader.classList.add('hidden');
+        // Ensure undo/redo reflect the cleared history
+        updateUndoRedoButtons();
     }
 }
 
@@ -611,9 +615,6 @@ async function refineDFD() {
         return;
     }
     
-    // Snapshot current state before mutating (enables undo)
-    saveSnapshot();
-    
     // Set loading state
     elements.btnRefine.disabled = true;
     elements.refineBtnText.textContent = "Refining...";
@@ -621,7 +622,14 @@ async function refineDFD() {
     elements.btnGenerate.disabled = true;
     elements.refinementInput.disabled = true;
     
+    // Track whether snapshot was saved so we can roll it back on failure
+    let snapshotSaved = false;
+    
     try {
+        // Snapshot BEFORE sending to API — only commit if request succeeds
+        saveSnapshot();
+        snapshotSaved = true;
+        
         const response = await fetch('/api/refine', {
             method: 'POST',
             headers: {
@@ -666,12 +674,23 @@ async function refineDFD() {
         appState.components = result.components || [];
         populateDictionary(result.components);
         
+        // Sync undo/redo button state now that snapshot is fully committed
+        updateUndoRedoButtons();
+        
         // Clear refinement textbox on success
         elements.refinementInput.value = "";
         
         showToast("Diagram refined successfully!", "success");
         
     } catch (error) {
+        // Roll back the snapshot if refine failed — don't pollute undo history
+        if (snapshotSaved) {
+            appState.undoStack.pop();
+            // Restore redoStack state: saveSnapshot() cleared it, but the
+            // refine never completed so redo history should be intact.
+            // We can't recover redoStack here, but at least undo is clean.
+            updateUndoRedoButtons();
+        }
         console.error(error);
         showToast(error.message, "error");
     } finally {
@@ -815,6 +834,188 @@ function initResizers() {
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
     });
+}
+
+// =============================================================================
+//  Canvas Controls — Zoom & Pan
+// =============================================================================
+function initCanvasControls() {
+    const viewport  = elements.canvasViewport;       // overflow:hidden container
+    const container = elements.mermaidRenderContainer; // transform target
+
+    if (!viewport || !container) return;
+
+    // ── State ────────────────────────────────────────────────────────────────
+    let scale  = 1;
+    let originX = 0;   // pan offset in px
+    let originY = 0;
+
+    const MIN_SCALE = 0.15;
+    const MAX_SCALE = 4;
+    const STEP      = 0.15;   // button zoom step
+    const WHEEL_SENSITIVITY = 0.001;
+
+    // Zoom-level badge (injected next to the toolbar buttons)
+    const zoomBadge = document.createElement('span');
+    zoomBadge.id = 'zoom-badge';
+    zoomBadge.style.cssText = `
+        font-size: 11px; font-weight: 700; font-family: var(--font-body);
+        color: var(--text-secondary); background: var(--bg-input);
+        border: 1px solid var(--border-color); border-radius: 6px;
+        padding: 3px 8px; min-width: 46px; text-align: center;
+        pointer-events: none; user-select: none;
+    `;
+    // Insert after zoom-reset button
+    const resetBtn = elements.zoomReset;
+    if (resetBtn && resetBtn.parentNode) {
+        resetBtn.parentNode.insertBefore(zoomBadge, resetBtn.nextSibling);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function applyTransform(smooth = false) {
+        container.style.transition = smooth
+            ? 'transform 0.18s cubic-bezier(0.25,0.46,0.45,0.94)'
+            : 'none';
+        container.style.transform =
+            `translate(${originX}px, ${originY}px) scale(${scale})`;
+        container.style.transformOrigin = '0 0';
+        zoomBadge.textContent = `${Math.round(scale * 100)}%`;
+        appState.zoom = scale;
+        appState.panX = originX;
+        appState.panY = originY;
+    }
+
+    /** Zoom around a viewport-relative pivot point (px). */
+    function zoomAround(newScale, pivotX, pivotY) {
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+        // Convert pivot from viewport space to content space
+        const ratio = newScale / scale;
+        originX = pivotX - ratio * (pivotX - originX);
+        originY = pivotY - ratio * (pivotY - originY);
+        scale = newScale;
+        applyTransform();
+    }
+
+    /** Centre-zoom (used by buttons). */
+    function zoomTo(newScale, smooth = true) {
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+        const vw = viewport.clientWidth  / 2;
+        const vh = viewport.clientHeight / 2;
+        zoomAround(newScale, vw, vh);
+        if (smooth) applyTransform(true);
+    }
+
+    /** Fit the diagram to the viewport. */
+    function fitToView(smooth = true) {
+        const svgEl = container.querySelector('svg');
+        if (!svgEl) { scale = 1; originX = 0; originY = 0; applyTransform(smooth); return; }
+
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        const cw = svgEl.getBoundingClientRect().width  / scale; // natural width
+        const ch = svgEl.getBoundingClientRect().height / scale;
+
+        const padding = 32;
+        const newScale = Math.min(
+            (vw - padding * 2) / cw,
+            (vh - padding * 2) / ch,
+            1           // never zoom above 100 % on reset
+        );
+        scale = Math.max(MIN_SCALE, newScale);
+        originX = (vw - cw * scale) / 2;
+        originY = (vh - ch * scale) / 2;
+        applyTransform(smooth);
+    }
+
+    // ── Mouse-wheel zoom (cursor-centred) ─────────────────────────────────────
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect   = viewport.getBoundingClientRect();
+        const pivotX = e.clientX - rect.left;
+        const pivotY = e.clientY - rect.top;
+
+        // pinch-to-zoom sends ctrlKey = true with fractional deltaY
+        const delta = e.ctrlKey
+            ? -e.deltaY * 0.02
+            : -e.deltaY * WHEEL_SENSITIVITY * (e.deltaMode === 1 ? 20 : 1);
+
+        zoomAround(scale * (1 + delta), pivotX, pivotY);
+    }, { passive: false });
+
+    // ── Click-and-drag pan ────────────────────────────────────────────────────
+    let dragActive = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragOriginX = 0;
+    let dragOriginY = 0;
+
+    viewport.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;   // left button only
+        dragActive  = true;
+        dragStartX  = e.clientX;
+        dragStartY  = e.clientY;
+        dragOriginX = originX;
+        dragOriginY = originY;
+        viewport.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!dragActive) return;
+        originX = dragOriginX + (e.clientX - dragStartX);
+        originY = dragOriginY + (e.clientY - dragStartY);
+        applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!dragActive) return;
+        dragActive = false;
+        viewport.style.cursor = 'grab';
+    });
+
+    // ── Touch pinch-to-zoom ───────────────────────────────────────────────────
+    let lastTouchDist = 0;
+    let lastTouchMidX = 0;
+    let lastTouchMidY = 0;
+
+    function touchDist(t) {
+        const dx = t[0].clientX - t[1].clientX;
+        const dy = t[0].clientY - t[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+
+    viewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            lastTouchDist = touchDist(e.touches);
+            const rect = viewport.getBoundingClientRect();
+            lastTouchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+            lastTouchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 2) return;
+        e.preventDefault();
+        const dist = touchDist(e.touches);
+        const ratio = dist / lastTouchDist;
+        zoomAround(scale * ratio, lastTouchMidX, lastTouchMidY);
+        lastTouchDist = dist;
+    }, { passive: false });
+
+    // ── Toolbar buttons ───────────────────────────────────────────────────────
+    elements.zoomIn.addEventListener('click',    () => zoomTo(scale + STEP));
+    elements.zoomOut.addEventListener('click',   () => zoomTo(scale - STEP));
+    elements.zoomReset.addEventListener('click', () => fitToView());
+
+    // ── Set initial cursor & state ────────────────────────────────────────────
+    viewport.style.cursor      = 'grab';
+    viewport.style.overflow    = 'hidden';
+    viewport.style.userSelect  = 'none';
+    container.style.transformOrigin = '0 0';
+    applyTransform();
+
+    // Expose fitToView so renderDiagram can call it after new content renders
+    window._fitDiagramToView = fitToView;
 }
 
 // Initial Loading Logic
